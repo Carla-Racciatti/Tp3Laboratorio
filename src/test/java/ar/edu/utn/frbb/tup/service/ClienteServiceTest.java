@@ -134,19 +134,12 @@ public class ClienteServiceTest {
 
 
     /**
-     *  Se quiere probar que se pueden agregar dos cuentas a un mismo titular: una caja de ahorro y una cuenta corriente
-     * @throws TipoCuentaAlreadyExistsException
+     *  Testeo que se pueden agregar dos cuentas en pesos a un mismo titular: una caja de ahorro y una cuenta corriente
      */
     @Test
     public void testAgregarCajaAhorroYCorriente() throws TipoCuentaAlreadyExistsException {
-        final int dni= 40022659;
 
-        Cliente cliente = new Cliente();
-        cliente.setNombre("Carla");
-        cliente.setApellido("Racciatti");
-        cliente.setDni(dni);
-        cliente.setFechaNacimiento(LocalDate.of(1996, 6, 12));
-        cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
+        Cliente cliente = this.crearCliente();
 
         // Agregar una CA$
         Cuenta cuentaCajaAhorro = new Cuenta()
@@ -160,7 +153,7 @@ public class ClienteServiceTest {
                 .setBalance(1000000)
                 .setTipoCuenta(TipoCuenta.CUENTA_CORRIENTE);
 
-        when(clienteDao.find(dni, true)).thenReturn(cliente);
+        when(clienteDao.find(cliente.getDni(), true)).thenReturn(cliente);
 
         clienteService.agregarCuenta(cuentaCajaAhorro, cliente.getDni());
         clienteService.agregarCuenta(cuentaCuentaCorriente, cliente.getDni());
@@ -174,16 +167,13 @@ public class ClienteServiceTest {
         assertEquals(cliente, cuentaCuentaCorriente.getTitular());
     }
 
+
+    /**
+     * Testeo que se pueden agregar dos cajas de ahorro a un mismo titular: una en pesos y una en dolares
+     */
     @Test
     public void testAgregarCajaAhorroYCAUSS() throws TipoCuentaAlreadyExistsException {
-        final int dni= 40022659;
-
-        Cliente cliente = new Cliente();
-        cliente.setNombre("Carla");
-        cliente.setApellido("Racciatti");
-        cliente.setDni(dni);
-        cliente.setFechaNacimiento(LocalDate.of(1996, 6, 12));
-        cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
+       Cliente cliente = this.crearCliente();
 
         // Agregar una CA$
         Cuenta cuentaCajaAhorro = new Cuenta()
@@ -197,7 +187,7 @@ public class ClienteServiceTest {
                 .setBalance(500)
                 .setTipoCuenta(TipoCuenta.CAJA_AHORRO);
 
-        when(clienteDao.find(dni, true)).thenReturn(cliente);
+        when(clienteDao.find(cliente.getDni(), true)).thenReturn(cliente);
 
         clienteService.agregarCuenta(cuentaCajaAhorro, cliente.getDni());
         clienteService.agregarCuenta(cuentaCajaAhorroDolares, cliente.getDni());
@@ -211,38 +201,45 @@ public class ClienteServiceTest {
         assertEquals(cliente, cuentaCajaAhorroDolares.getTitular());
     }
 
+    /**
+     * Testeo el método buscarPorDni: caso de éxito
+     */
     @Test
     public void testBuscarClienteExistente() {
-        final int dni= 40022659;
+        Cliente cliente = this.crearCliente();
 
-        Cliente cliente = new Cliente();
-        cliente.setNombre("Carla");
-        cliente.setApellido("Racciatti");
-        cliente.setDni(dni);
-        cliente.setFechaNacimiento(LocalDate.of(1996, 6, 12));
-        cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
+        when(clienteDao.find(cliente.getDni(), true)).thenReturn(cliente);
 
-        when(clienteDao.find(dni, true)).thenReturn(cliente);
+        Cliente encontrado = clienteService.buscarClientePorDni(cliente.getDni());
 
-        Cliente encontrado = clienteService.buscarClientePorDni(dni);
-
-        verify(clienteDao, times(1)).find(dni, true);
+        verify(clienteDao, times(1)).find(cliente.getDni(), true);
         assertEquals(cliente, encontrado);
     }
 
+    /**
+     * Testeo el método buscarPorDni: caso de falla
+     */
     @Test
     public void testBuscarClienteNoExistente() {
 
-        final int dni= 40022659;
+        Cliente cliente= this.crearCliente();
 
+        when(clienteDao.find(cliente.getDni(),true)).thenReturn(null);
+        assertThrows(IllegalArgumentException.class,()-> clienteService.buscarClientePorDni(cliente.getDni()));
+    }
+
+
+    /**
+     *Método para crear clientes que usaré en cada test
+     */
+    private Cliente crearCliente(){
         Cliente cliente = new Cliente();
+        cliente.setFechaNacimiento(LocalDate.of(1980, 5, 10));
         cliente.setNombre("Carla");
         cliente.setApellido("Racciatti");
-        cliente.setDni(dni);
-        cliente.setFechaNacimiento(LocalDate.of(1980, 5, 10));
+        cliente.setDni(40022659);
         cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
-
-        when(clienteDao.find(dni,true)).thenReturn(null);
-        assertThrows(IllegalArgumentException.class,()-> clienteService.buscarClientePorDni(dni));
+        return cliente;
     }
+
 }

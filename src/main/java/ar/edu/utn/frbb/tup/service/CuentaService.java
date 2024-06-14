@@ -57,7 +57,6 @@ public class CuentaService {
 
         // Asocio cuenta al cliente y guardo
         clienteService.agregarCuenta(cuenta,dniTitular);
-        //titular.addCuenta(cuenta);
         cuentaDao.save(cuenta);
     }
 
@@ -71,12 +70,7 @@ public class CuentaService {
         String moneda = cuenta.getMoneda().name();
         String tipoYMoneda = tipoCuenta + moneda;
 
-        if(CUENTAS_SOPORTADAS.contains(tipoYMoneda)) {
-            return true;
-        } else {
-            throw new CuentaNoSoportadaException("No es posible soportar ese tipo de cuenta");
-        }
-
+        return CUENTAS_SOPORTADAS.contains(tipoYMoneda);
     }
 
 }

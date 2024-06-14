@@ -36,81 +36,95 @@ public class CuentaServiceTest {
     @InjectMocks
     private CuentaService cuentaService;
 
+    final long numeroCuenta = 12345678;
+
+    final long dni= 40022659;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
+
+    /**
+     * Testeo cuenta existente
+     */
     @Test
     public void testCuentaExistente() {
         Cuenta cuenta = new Cuenta();
-        cuenta.setNumeroCuenta(123456);
+        cuenta.setNumeroCuenta(numeroCuenta);
 
-        when(cuentaDao.find(123456)).thenReturn(cuenta);
+        when(cuentaDao.find(numeroCuenta)).thenReturn(cuenta);
 
-        assertThrows(CuentaAlreadyExistsException.class, () -> cuentaService.darDeAltaCuenta(cuenta, 12345678));
+        assertThrows(CuentaAlreadyExistsException.class, () -> cuentaService.darDeAltaCuenta(cuenta, dni));
     }
 
+    /**
+     * Testeo cuenta no soportada
+     */
     @Test
     public void testCuentaNoSoportada() {
         Cuenta cuenta = new Cuenta();
         cuenta.setTipoCuenta(TipoCuenta.CUENTA_CORRIENTE);
-        cuenta.setMoneda(TipoMoneda.EUROS);
+        cuenta.setMoneda(TipoMoneda.DOLARES);
 
-        assertThrows(CuentaNoSoportadaException.class, () -> cuentaService.darDeAltaCuenta(cuenta, 12345678));
+        assertThrows(CuentaNoSoportadaException.class, () -> cuentaService.darDeAltaCuenta(cuenta, dni));
     }
 
+    /**
+     * Testeo que no se pueda agregar una cuenta si el cliente ya posee una cuenta del mismo tipo y moneda.
+     */
     @Test
-    public void testClienteYaTieneCuentaDeEseTipoYMoneda() throws CuentaAlreadyExistsException, TipoCuentaAlreadyExistsException, CuentaNoSoportadaException {
-        // Crear un cliente existente con una cuenta del mismo tipo y moneda
+    public void testClienteYaTieneCuentaDeEseTipoYMoneda()  {
+        // Creo un cliente existente con una cuenta del mismo tipo y moneda
         Cliente clienteExistente = new Cliente();
-        clienteExistente.setDni(12345678); // DNI del cliente
+        clienteExistente.setDni(dni);
         Cuenta cuentaExistente = new Cuenta();
         cuentaExistente.setTipoCuenta(TipoCuenta.CAJA_AHORRO);
         cuentaExistente.setMoneda(TipoMoneda.PESOS);
-        clienteExistente.addCuenta(cuentaExistente); // Agregar cuenta existente al cliente
+        clienteExistente.addCuenta(cuentaExistente);
 
-        // Configurar el comportamiento del mock de ClienteService para que devuelva clienteExistente
-        when(clienteService.buscarClientePorDni(12345678)).thenReturn(clienteExistente);
 
-        // Crear la cuenta a dar de alta (misma tipo y moneda que cuentaExistente)
+        when(clienteService.buscarClientePorDni(dni)).thenReturn(clienteExistente);
+
+        // Creo la cuenta a dar de alta (misma tipo y moneda que cuentaExistente)
         Cuenta cuenta = new Cuenta();
-        cuenta.setNumeroCuenta(987654); // Número de cuenta diferente
+        cuenta.setNumeroCuenta(numeroCuenta); // Número de cuenta diferente
         cuenta.setTipoCuenta(TipoCuenta.CAJA_AHORRO);
         cuenta.setMoneda(TipoMoneda.PESOS);
 
-        // Verificar que se lance TipoCuentaAlreadyExistsException al intentar dar de alta la cuenta
-        assertThrows(TipoCuentaAlreadyExistsException.class, () -> cuentaService.darDeAltaCuenta(cuenta, 12345678));
+        // Verifico que se lance TipoCuentaAlreadyExistsException al intentar dar de alta la cuenta
+        assertThrows(TipoCuentaAlreadyExistsException.class, () -> cuentaService.darDeAltaCuenta(cuenta, dni));
     }
 
+
+    /**
+     *Testeo que la cuenta se cree exitosamente
+     */
     @Test
     public void testCreacionCuentaExitosa() throws CuentaAlreadyExistsException, TipoCuentaAlreadyExistsException, CuentaNoSoportadaException {
-        // Crear un cliente mock con cuentas vacías
+
         Cliente clienteMock = new Cliente();
 
-        // Configurar el comportamiento del mock de clienteService para que devuelva el cliente mock
-        when(clienteService.buscarClientePorDni(40022659L)).thenReturn(clienteMock);
+        // Simulo cuenta no existente
+        when(cuentaDao.find(numeroCuenta)).thenReturn(null);
 
-        // Configurar el comportamiento del mock de cuentaDao para simular cuenta no existente
-        when(cuentaDao.find(anyLong())).thenReturn(null);
+        when(clienteService.buscarClientePorDni(dni)).thenReturn(clienteMock);
 
-        // Configurar el comportamiento de clienteService para simular agregar la cuenta al cliente
-        doNothing().when(clienteService).agregarCuenta(any(Cuenta.class), eq(40022659L));
-
-        // Crear una cuenta
+        // Creo una cuenta
         Cuenta cuenta = new Cuenta();
         cuenta.setMoneda(TipoMoneda.PESOS);
         cuenta.setBalance(77000);
         cuenta.setTipoCuenta(TipoCuenta.CUENTA_CORRIENTE);
-        cuenta.setNumeroCuenta(123456);
+        cuenta.setNumeroCuenta(numeroCuenta);
 
-        // Llamar al método para dar de alta la cuenta
-        cuentaService.darDeAltaCuenta(cuenta, 40022659L);
+        // Llamo al método para dar de alta la cuenta
+        cuentaService.darDeAltaCuenta(cuenta, dni);
 
-        // Verificar que se agregó la cuenta al cliente
-        verify(clienteService, times(1)).agregarCuenta(cuenta, 40022659L);
+        // Verifico que se agregó la cuenta al cliente
+        verify(clienteService, times(1)).agregarCuenta(cuenta, dni);
 
-        // Verificar que se guardó la cuenta en el dao de cuentas
+        // Verifico que se guardó la cuenta en el dao de cuentas
         verify(cuentaDao, times(1)).save(cuenta);
     }
 }
