@@ -133,12 +133,19 @@ public class ClienteServiceTest {
     //Testear clienteService.buscarPorDni
 
 
+    /**
+     *  Se quiere probar que se pueden agregar dos cuentas a un mismo titular: una caja de ahorro y una cuenta corriente
+     * @throws TipoCuentaAlreadyExistsException
+     */
     @Test
     public void testAgregarCajaAhorroYCorriente() throws TipoCuentaAlreadyExistsException {
+        final int dni= 40022659;
+
         Cliente cliente = new Cliente();
-        cliente.setNombre("Juan");
-        cliente.setApellido("Perez");
-        cliente.setFechaNacimiento(LocalDate.of(1980, 5, 10));
+        cliente.setNombre("Carla");
+        cliente.setApellido("Racciatti");
+        cliente.setDni(dni);
+        cliente.setFechaNacimiento(LocalDate.of(1996, 6, 12));
         cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
 
         // Agregar una CA$
@@ -153,7 +160,7 @@ public class ClienteServiceTest {
                 .setBalance(1000000)
                 .setTipoCuenta(TipoCuenta.CUENTA_CORRIENTE);
 
-        when(clienteDao.find(anyLong(), anyBoolean())).thenReturn(cliente);
+        when(clienteDao.find(dni, true)).thenReturn(cliente);
 
         clienteService.agregarCuenta(cuentaCajaAhorro, cliente.getDni());
         clienteService.agregarCuenta(cuentaCuentaCorriente, cliente.getDni());
@@ -169,10 +176,13 @@ public class ClienteServiceTest {
 
     @Test
     public void testAgregarCajaAhorroYCAUSS() throws TipoCuentaAlreadyExistsException {
+        final int dni= 40022659;
+
         Cliente cliente = new Cliente();
-        cliente.setNombre("María");
-        cliente.setApellido("López");
-        cliente.setFechaNacimiento(LocalDate.of(1990, 8, 15));
+        cliente.setNombre("Carla");
+        cliente.setApellido("Racciatti");
+        cliente.setDni(dni);
+        cliente.setFechaNacimiento(LocalDate.of(1996, 6, 12));
         cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
 
         // Agregar una CA$
@@ -187,7 +197,7 @@ public class ClienteServiceTest {
                 .setBalance(500)
                 .setTipoCuenta(TipoCuenta.CAJA_AHORRO);
 
-        when(clienteDao.find(anyLong(), anyBoolean())).thenReturn(cliente);
+        when(clienteDao.find(dni, true)).thenReturn(cliente);
 
         clienteService.agregarCuenta(cuentaCajaAhorro, cliente.getDni());
         clienteService.agregarCuenta(cuentaCajaAhorroDolares, cliente.getDni());
@@ -203,29 +213,36 @@ public class ClienteServiceTest {
 
     @Test
     public void testBuscarClienteExistente() {
-        Cliente pepeRino = new Cliente();
-        pepeRino.setDni(26456439);
-        pepeRino.setNombre("Pepe");
-        pepeRino.setApellido("Rino");
-        pepeRino.setFechaNacimiento(LocalDate.of(1978, 3, 25));
-        pepeRino.setTipoPersona(TipoPersona.PERSONA_FISICA);
+        final int dni= 40022659;
 
-        when(clienteDao.find(26456439, false)).thenReturn(pepeRino);
+        Cliente cliente = new Cliente();
+        cliente.setNombre("Carla");
+        cliente.setApellido("Racciatti");
+        cliente.setDni(dni);
+        cliente.setFechaNacimiento(LocalDate.of(1996, 6, 12));
+        cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
 
-        Cliente encontrado = clienteService.buscarClientePorDni(26456439);
+        when(clienteDao.find(dni, true)).thenReturn(cliente);
 
-        verify(clienteDao, times(1)).find(26456439, false);
-        assertEquals(pepeRino, encontrado);
+        Cliente encontrado = clienteService.buscarClientePorDni(dni);
+
+        verify(clienteDao, times(1)).find(dni, true);
+        assertEquals(cliente, encontrado);
     }
 
     @Test
     public void testBuscarClienteNoExistente() {
-        when(clienteDao.find(12345678, false)).thenReturn(null);
 
-        Cliente encontrado = clienteService.buscarClientePorDni(12345678);
+        final int dni= 40022659;
 
-        verify(clienteDao, times(1)).find(12345678, false);
-        assertNull(encontrado);
+        Cliente cliente = new Cliente();
+        cliente.setNombre("Carla");
+        cliente.setApellido("Racciatti");
+        cliente.setDni(dni);
+        cliente.setFechaNacimiento(LocalDate.of(1980, 5, 10));
+        cliente.setTipoPersona(TipoPersona.PERSONA_FISICA);
+
+        when(clienteDao.find(dni,true)).thenReturn(null);
+        assertThrows(IllegalArgumentException.class,()-> clienteService.buscarClientePorDni(dni));
     }
-
 }
